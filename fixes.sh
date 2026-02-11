@@ -246,6 +246,33 @@ create_git_placeholders() {
 }
 
 
+# Function to check and fix local_manifests location
+fix_manifest_location() {
+    local action=$1
+
+    case "$action" in
+        apply)
+            log_info "Checking local_manifests location..."
+
+            if [ -f "local_manifests/xaga.xml" ]; then
+                if [ ! -d ".repo/local_manifests" ]; then
+                    mkdir -p .repo/local_manifests
+                fi
+
+                cp local_manifests/xaga.xml .repo/local_manifests/xaga.xml
+                log_info "Copied local_manifests/xaga.xml to .repo/local_manifests/"
+                log_info "Now 'repo sync' will see the Xaga repositories."
+            else
+                log_error "local_manifests/xaga.xml not found in current directory."
+            fi
+            ;;
+        undo)
+            # No real undo needed for this helper
+            log_info "Nothing to undo for manifest location fix."
+            ;;
+    esac
+}
+
 # Function to add MIUI Camera
 add_miui_camera() {
     local action=$1
@@ -341,6 +368,7 @@ main_menu() {
                     3) apply_option "Remove Qualcomm directories" remove_qcom ;;
                     4) apply_option "Create git placeholders" create_git_placeholders ;;
 
+                    5) apply_option "Fix local_manifests location" fix_manifest_location ;;
                     6) apply_option "Add MIUI Camera" add_miui_camera ;;
                     0) continue ;;
                 esac
