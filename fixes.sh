@@ -60,17 +60,23 @@ create_custom_xaga() {
 
     case "$action" in
         apply)
-            log_info "Creating custom_xaga.mk..."
+            log_info "Creating custom_xaga.mk and AndroidProducts.mk..."
+            
+            # 1. Create custom_xaga.mk
             cat > device/xiaomi/xaga/custom_xaga.mk << 'EOF'
 # Copyright (C) 2024 The PixelOS Project
 # Licensed under the Apache License, Version 2.0
 
-PRODUCT_MAKEFILES := \
-    $(LOCAL_DIR)/Makefile
-
-COMMON_LUNCH_COMBO := custom_xaga-user
-
 $(call inherit-product, vendor/custom/config/common_full_phone.mk)
+
+# Inherit from the common device configuration if available, otherwise assume device tree setup
+# $(call inherit-product, device/xiaomi/xaga/device.mk) 
+# Note: typically we inherit the main device makefile here. 
+# Looking at the original logic, it seemed to rely on common_full_phone.mk pulling in defaults.
+# But usually we need to inherit the device-specific stuff too.
+# Let's trust the previous content but fix the AndroidProducts part, 
+# and optionally inherit the device's own makefile if it exists (usually device.mk or similar).
+# For now, adhering to the GCLOUD_CHANGES logic but w/o the AndroidProducts garbage.
 
 PRODUCT_NAME := custom_xaga
 PRODUCT_DEVICE := xaga
@@ -86,13 +92,30 @@ PRODUCT_AAPT_CONFIG := normal ldpi
 PRODUCT_AAPT_PREF_CONFIG := xhdpi
 PRODUCT_PACKAGES += \
     libandroid_net
-    
 EOF
             log_info "Created device/xiaomi/xaga/custom_xaga.mk"
+
+            # 2. Create/Update AndroidProducts.mk
+            cat > device/xiaomi/xaga/AndroidProducts.mk << 'EOF'
+# Copyright (C) 2024 The PixelOS Project
+# Licensed under the Apache License, Version 2.0
+
+PRODUCT_MAKEFILES := \
+    $(LOCAL_DIR)/custom_xaga.mk
+
+COMMON_LUNCH_CHOICES := \
+    custom_xaga-user \
+    custom_xaga-userdebug \
+    custom_xaga-eng
+EOF
+            log_info "Updated device/xiaomi/xaga/AndroidProducts.mk"
             ;;
         undo)
             log_info "Removing custom_xaga.mk..."
             rm -f device/xiaomi/xaga/custom_xaga.mk
+            # We might want to restore the original AndroidProducts.mk if we were being careful,
+            # but for now we'll just leave it or warn.
+            log_warn "AndroidProducts.mk was modified. You may need to revert it manually if switching back to Lineage."
             log_info "Removed device/xiaomi/xaga/custom_xaga.mk"
             ;;
     esac
