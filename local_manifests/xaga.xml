@@ -7,58 +7,63 @@
 -->
 <manifest>
 
-  <remote name="xaga"
-          fetch="https://github.com/XagaForge" />
+  <remote name="github"
+          fetch="https://github.com/" />
+  
+  <remote name="gitlab"
+          fetch="https://gitlab.com/" />
 
-  <!-- Device Trees -->
-  <project name="android_device_xiaomi_xaga"
+  <!-- Device Trees (LineageOS 23.1 / Android 16) -->
+  <project name="xiaomi-mt6895-devs/android_device_xiaomi_xaga"
            path="device/xiaomi/xaga"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
-  <project name="android_device_xiaomi_mt6895-common"
+  <project name="xiaomi-mt6895-devs/android_device_xiaomi_mt6895-common"
            path="device/xiaomi/mt6895-common"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
   <!-- Vendor -->
-  <project name="android_vendor_xiaomi_xaga"
+  <project name="xiaomi-mt6895-devs/proprietary_vendor_xiaomi_xaga"
            path="vendor/xiaomi/xaga"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
-  <project name="android_vendor_xiaomi_mt6895-common"
+  <project name="xiaomi-mt6895-devs/proprietary_vendor_xiaomi_mt6895-common"
            path="vendor/xiaomi/mt6895-common"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
   <!-- Kernel -->
-  <project name="android_kernel_xiaomi_mt6895"
+  <project name="xiaomi-mt6895-devs/android_kernel_xiaomi_mt6895"
            path="kernel/xiaomi/mt6895"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
   <!-- Hardware/MediaTek -->
-  <project name="android_hardware_mediatek"
+  <project name="xiaomi-mt6895-devs/android_hardware_mediatek"
            path="hardware/mediatek"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
-  <project name="android_device_mediatek_sepolicy_vndr"
+  <project name="xiaomi-mt6895-devs/android_device_mediatek_sepolicy-vndr"
            path="device/mediatek/sepolicy_vndr"
-           remote="xaga"
-           revision="sixteen" />
+           remote="github"
+           revision="lineage-23.1" />
 
-  <!-- Firmware -->
+  <!-- Firmware (XagaForge/Other) - Commented out if unsure, or use known -->
+  <!-- 
   <project name="android_vendor_xiaomi_xaga-firmware"
            path="vendor/xiaomi/xaga-firmware"
            remote="xaga"
            revision="sixteen" />
+  -->
 
-  <!-- MIUI Camera -->
-  <project name="android_vendor_xiaomi_miuicamera"
-           path="vendor/xiaomi/miuicamera"
-           remote="xaga"
-           revision="sixteen" />
+  <!-- MIUI Camera (GitLab source found in fixes.sh) -->
+  <project name="priiii1808/proprietary_vendor_xiaomi_miuicamera-xaga"
+           path="vendor/xiaomi/miuicamera-xaga"
+           remote="gitlab"
+           revision="16.1" />
 
 </manifest>
