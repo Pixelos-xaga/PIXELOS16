@@ -1,0 +1,26 @@
+# Ignore repo and build artifacts
+.repo/
+out/
+build-log.txt
+*.img
+*.zip
+*.log
+
+# Ignore device/vendor/kernel trees if cloned locally (optional)
+device/
+vendor/
+kernel/
+hardware/
+prebuilts/
+external/
+frameworks/
+packages/
+system/
+bootable/
+libcore/
+libnativehelper/
+pdk/
+platform_testing/
+toolchain/
+tools/
+test/

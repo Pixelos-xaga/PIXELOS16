@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Local manifest for PixelOS Xaga build
+  Uses device trees and vendor blobs from XagaForge
+  
+  Place this file in: .repo/local_manifests/xaga.xml
+-->
+<manifest>
+
+  <remote name="xaga"
+          fetch="https://github.com/XagaForge" />
+
+  <!-- Device Trees -->
+  <project name="android_device_xiaomi_xaga"
+           path="device/xiaomi/xaga"
+           remote="xaga"
+           revision="sixteen" />
+
+  <project name="android_device_xiaomi_mt6895-common"
+           path="device/xiaomi/mt6895-common"
+           remote="xaga"
+           revision="sixteen" />
+
+  <!-- Vendor -->
+  <project name="android_vendor_xiaomi_xaga"
+           path="vendor/xiaomi/xaga"
+           remote="xaga"
+           revision="sixteen" />
+
+  <project name="android_vendor_xiaomi_mt6895-common"
+           path="vendor/xiaomi/mt6895-common"
+           remote="xaga"
+           revision="sixteen" />
+
+  <!-- Kernel -->
+  <project name="android_kernel_xiaomi_mt6895"
+           path="kernel/xiaomi/mt6895"
+           remote="xaga"
+           revision="sixteen" />
+
+  <!-- Hardware/MediaTek -->
+  <project name="android_hardware_mediatek"
+           path="hardware/mediatek"
+           remote="xaga"
+           revision="sixteen" />
+
+  <project name="android_device_mediatek_sepolicy_vndr"
+           path="device/mediatek/sepolicy_vndr"
+           remote="xaga"
+           revision="sixteen" />
+
+  <!-- Firmware (if needed/available) -->
+  <!-- <project name="android_vendor_firmware"
+           path="vendor/xiaomi/xaga-firmware"
+           remote="xaga"
+           revision="sixteen" /> -->
+
+</manifest>
