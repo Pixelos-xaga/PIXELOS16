@@ -41,7 +41,7 @@ apply_option() {
 
     echo ""
     echo "=== $name ==="
-    echo "This will: ${description[$name]}"
+
     echo ""
     read -p "Apply this fix? (y/n): " choice
 
@@ -109,6 +109,14 @@ COMMON_LUNCH_CHOICES := \
     custom_xaga-eng
 EOF
             log_info "Updated device/xiaomi/xaga/AndroidProducts.mk"
+
+            # Verify files
+            if [ -f "device/xiaomi/xaga/custom_xaga.mk" ] && [ -f "device/xiaomi/xaga/AndroidProducts.mk" ]; then
+                log_info "Files created successfully:"
+                ls -l device/xiaomi/xaga/custom_xaga.mk device/xiaomi/xaga/AndroidProducts.mk
+            else
+                log_error "Failed to create files in device/xiaomi/xaga/. check directory matches"
+            fi
             ;;
         undo)
             log_info "Removing custom_xaga.mk..."
