@@ -1,43 +1,57 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   Local manifest for PixelOS Xaga build
-  Uses xiaomi-mt6895-devs (lineage-23.1) + MIUI Camera from XagaForge
-  
-  Place this file in: .repo/local_manifests/xaga.xml
+  Updated to use XagaForge repositories
 -->
 <manifest>
 
-  <!-- Device Trees from xiaomi-mt6895-devs -->
-  <project name="xiaomi-mt6895-devs/android_device_xiaomi_xaga"
+  <!-- Device Trees -->
+  <project name="XagaForge/android_device_xiaomi_xaga"
            path="device/xiaomi/xaga"
            remote="github"
            revision="lineage-23.1" />
 
-  <project name="xiaomi-mt6895-devs/android_device_xiaomi_mt6895-common"
+  <project name="XagaForge/android_device_xiaomi_mt6895-common"
            path="device/xiaomi/mt6895-common"
            remote="github"
            revision="lineage-23.1" />
 
-  <!-- Vendor from xiaomi-mt6895-devs -->
-  <project name="xiaomi-mt6895-devs/proprietary_vendor_xiaomi_mt6895-common"
+  <!-- Vendor -->
+  <project name="XagaForge/android_vendor_xiaomi_mt6895-common"
            path="vendor/xiaomi/mt6895-common"
            remote="github"
            revision="lineage-23.1" />
 
-  <!-- Kernel from xiaomi-mt6895-devs -->
-  <project name="xiaomi-mt6895-devs/android_kernel_xiaomi_mt6895"
+  <project name="XagaForge/android_vendor_xiaomi_xaga"
+           path="vendor/xiaomi/xaga"
+           remote="github"
+           revision="lineage-23.1" />
+
+  <project name="XagaForge/android_vendor_firmware"
+           path="vendor/firmware_mnt"
+           remote="github"
+           revision="lineage-23.1" />
+
+  <!-- Kernel -->
+  <project name="XagaForge/android_kernel_xiaomi_mt6895"
            path="kernel/xiaomi/mt6895"
            remote="github"
            revision="lineage-23.1" />
 
-  <!-- MediaTek components from xiaomi-mt6895-devs -->
-  <project name="xiaomi-mt6895-devs/android_device_mediatek_sepolicy-vndr"
+  <!-- MediaTek components -->
+  <project name="XagaForge/android_device_mediatek_sepolicy_vndr"
            path="device/mediatek/sepolicy_vndr"
            remote="github"
            revision="lineage-23.1" />
 
-  <project name="xiaomi-mt6895-devs/android_hardware_mediatek"
+  <project name="XagaForge/android_hardware_mediatek"
            path="hardware/mediatek"
+           remote="github"
+           revision="lineage-23.1" />
+
+  <!-- Xiaomi Hardware -->
+  <project name="XagaForge/android_hardware_xiaomi"
+           path="hardware/xiaomi"
            remote="github"
            revision="lineage-23.1" />
 
