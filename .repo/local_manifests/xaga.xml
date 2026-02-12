@@ -4,52 +4,52 @@
   <project name="XagaForge/android_device_xiaomi_xaga"
            path="device/xiaomi/xaga"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
   <project name="XagaForge/android_device_xiaomi_mt6895-common"
            path="device/xiaomi/mt6895-common"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
   <!-- Vendor -->
   <project name="XagaForge/android_vendor_xiaomi_mt6895-common"
            path="vendor/xiaomi/mt6895-common"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
   <project name="XagaForge/android_vendor_xiaomi_xaga"
            path="vendor/xiaomi/xaga"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
   <project name="XagaForge/android_vendor_firmware"
            path="vendor/firmware_mnt"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
   <!-- Kernel -->
   <project name="XagaForge/android_kernel_xiaomi_mt6895"
            path="kernel/xiaomi/mt6895"
            remote="github"
-           revision="sixteen" />
+           revision="16" />
 
-  <!-- MediaTek components -->
+  <!-- MediaTek / Hardware -->
   <project name="XagaForge/android_device_mediatek_sepolicy_vndr"
            path="device/mediatek/sepolicy_vndr"
            remote="github"
-           revision="lineage-21" />
+           revision="16" />
 
   <project name="XagaForge/android_hardware_mediatek"
            path="hardware/mediatek"
            remote="github"
-           revision="lineage-21" />
+           revision="16" />
 
   <project name="XagaForge/android_hardware_xiaomi"
            path="hardware/xiaomi"
            remote="github"
-           revision="lineage-21" />
+           revision="16" />
 
-  <!-- MIUI Camera -->
+  <!-- MIUI Camera (gitlab) -->
   <remote name="xaga-gitlab"
           fetch="https://gitlab.com" />
 
