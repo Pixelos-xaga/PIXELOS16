@@ -2,6 +2,8 @@
 
 # PixelOS
 
+This is a github project which will be cloned into linux vm and used to build PixelOS 16 for xaga device. while this git repo also exist on windows machine. where the ai agent is running.
+
 ## Getting Started
 
 To get started with the PixelOS source code, you'll need to be

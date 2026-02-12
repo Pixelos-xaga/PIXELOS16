@@ -1,5 +1,5 @@
 # Ignore repo and build artifacts
-.repo/
+
 out/
 build-log.txt
 *.img
