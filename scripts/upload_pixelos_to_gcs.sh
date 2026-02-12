@@ -148,8 +148,16 @@ else
     print_info "Found PixelOS zip: ${PIXELOS_ZIP}"
 fi
 
+# Find Fastboot zip
+FASTBOOT_ZIP=$(find "$FULL_OUT_DIR" -name "FASTBOOT_Pixel_*.zip" -type f | head -1)
+if [ -z "$FASTBOOT_ZIP" ]; then
+    print_warning "Fastboot zip not found in ${FULL_OUT_DIR}"
+else
+    print_info "Found Fastboot zip: ${FASTBOOT_ZIP}"
+fi
+
 # Check if at least one file was found
-if [ -z "$BOOT_IMG" ] && [ -z "$VENDOR_BOOT_IMG" ] && [ -z "$PIXELOS_ZIP" ]; then
+if [ -z "$BOOT_IMG" ] && [ -z "$VENDOR_BOOT_IMG" ] && [ -z "$PIXELOS_ZIP" ] && [ -z "$FASTBOOT_ZIP" ]; then
     print_error "No ROM files found to upload!"
     exit 1
 fi
@@ -197,6 +205,7 @@ upload_file() {
 upload_file "$BOOT_IMG"
 upload_file "$VENDOR_BOOT_IMG"
 upload_file "$PIXELOS_ZIP"
+upload_file "$FASTBOOT_ZIP"
 
 print_info "Upload complete!"
 print_info "All files available at: gs://${BUCKET_NAME}/${UPLOAD_PATH}/"
@@ -226,6 +235,11 @@ fi
 if [ -n "$PIXELOS_ZIP" ]; then
     ZIP_CLEAN=$(basename "$PIXELOS_ZIP" | sed "s/^${DEVICE}_[0-9]\{8\}_[0-9]\{6\}_//")
     echo "- ${ZIP_CLEAN}" >> "$INDEX_FILE"
+fi
+
+if [ -n "$FASTBOOT_ZIP" ]; then
+    FASTBOOT_CLEAN=$(basename "$FASTBOOT_ZIP")
+    echo "- ${FASTBOOT_CLEAN}" >> "$INDEX_FILE"
 fi
 
 gsutil cp "$INDEX_FILE" "gs://${BUCKET_NAME}/${UPLOAD_PATH}/BUILD_INFO.txt"
