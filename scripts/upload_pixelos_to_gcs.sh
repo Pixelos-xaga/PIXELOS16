@@ -164,19 +164,30 @@ print_info "Upload path: gs://${BUCKET_NAME}/${UPLOAD_PATH}/"
 upload_file() {
     local file=$1
     local filename=$(basename "$file")
+    local clean_filename="$filename"
     
     if [ -n "$file" ] && [ -f "$file" ]; then
-        print_info "Uploading ${filename}..."
-        if gsutil -m cp "$file" "gs://${BUCKET_NAME}/${UPLOAD_PATH}/${filename}"; then
-            print_info "✓ ${filename} uploaded successfully"
+        # Remove timestamp prefix from filename if it matches pattern: devicename_YYYYMMDD_HHMMSS_*
+        # For boot.img and vendor_boot.img, strip the prefix completely
+        # For zip files, keep PixelOS prefix but remove device timestamp
+        if [[ "$filename" =~ ^${DEVICE}_[0-9]{8}_[0-9]{6}_ ]]; then
+            # Remove the device_timestamp_ prefix
+            clean_filename="${filename#${DEVICE}_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]_}"
+            # More robust pattern matching
+            clean_filename=$(echo "$filename" | sed "s/^${DEVICE}_[0-9]\{8\}_[0-9]\{6\}_//")
+        fi
+        
+        print_info "Uploading ${filename} as ${clean_filename}..."
+        if gsutil -m cp "$file" "gs://${BUCKET_NAME}/${UPLOAD_PATH}/${clean_filename}"; then
+            print_info "✓ ${clean_filename} uploaded successfully"
             
             # Make file publicly accessible (optional - comment out if you want private files)
-            # gsutil acl ch -u AllUsers:R "gs://${BUCKET_NAME}/${UPLOAD_PATH}/${filename}"
+            # gsutil acl ch -u AllUsers:R "gs://${BUCKET_NAME}/${UPLOAD_PATH}/${clean_filename}"
             
             # Generate download URL
-            echo "Download URL: https://storage.googleapis.com/${BUCKET_NAME}/${UPLOAD_PATH}/${filename}"
+            echo "Download URL: https://storage.googleapis.com/${BUCKET_NAME}/${UPLOAD_PATH}/${clean_filename}"
         else
-            print_error "Failed to upload ${filename}"
+            print_error "Failed to upload ${clean_filename}"
             return 1
         fi
     fi
@@ -202,9 +213,20 @@ Upload Path: gs://${BUCKET_NAME}/${UPLOAD_PATH}/
 Files:
 EOF
 
-[ -n "$BOOT_IMG" ] && echo "- boot.img" >> "$INDEX_FILE"
-[ -n "$VENDOR_BOOT_IMG" ] && echo "- vendor_boot.img" >> "$INDEX_FILE"
-[ -n "$PIXELOS_ZIP" ] && echo "- $(basename "$PIXELOS_ZIP")" >> "$INDEX_FILE"
+if [ -n "$BOOT_IMG" ]; then
+    BOOT_CLEAN=$(basename "$BOOT_IMG" | sed "s/^${DEVICE}_[0-9]\{8\}_[0-9]\{6\}_//")
+    echo "- ${BOOT_CLEAN}" >> "$INDEX_FILE"
+fi
+
+if [ -n "$VENDOR_BOOT_IMG" ]; then
+    VENDOR_BOOT_CLEAN=$(basename "$VENDOR_BOOT_IMG" | sed "s/^${DEVICE}_[0-9]\{8\}_[0-9]\{6\}_//")
+    echo "- ${VENDOR_BOOT_CLEAN}" >> "$INDEX_FILE"
+fi
+
+if [ -n "$PIXELOS_ZIP" ]; then
+    ZIP_CLEAN=$(basename "$PIXELOS_ZIP" | sed "s/^${DEVICE}_[0-9]\{8\}_[0-9]\{6\}_//")
+    echo "- ${ZIP_CLEAN}" >> "$INDEX_FILE"
+fi
 
 gsutil cp "$INDEX_FILE" "gs://${BUCKET_NAME}/${UPLOAD_PATH}/BUILD_INFO.txt"
 rm "$INDEX_FILE"
