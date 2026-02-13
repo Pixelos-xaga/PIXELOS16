@@ -108,8 +108,8 @@ if [ "$DO_FASTBOOT" = true ]; then
     echo ">>> Copying fastboot scripts to $PACKAGE_DIR..."
     if [ -d "scripts/fastboot" ]; then
         cp -r scripts/fastboot/. "$PACKAGE_DIR/"
-        # Force CRLF for Windows batch file
-        sed -i 's/$/\r/' "$PACKAGE_DIR/win_installation.bat"
+        # Force CRLF for Windows batch file (remove existing CR first to avoid duplicates)
+        sed -i 's/\r$//;s/$/\r/' "$PACKAGE_DIR/win_installation.bat"
         echo ">>> Converted win_installation.bat to CRLF"
         
         # Verify line endings
