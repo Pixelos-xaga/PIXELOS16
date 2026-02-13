@@ -111,10 +111,6 @@ if [ "$DO_FASTBOOT" = true ]; then
         # Force CRLF for Windows batch file (remove existing CR first to avoid duplicates)
         sed -i 's/\r$//;s/$/\r/' "$PACKAGE_DIR/win_installation.bat"
         echo ">>> Converted win_installation.bat to CRLF"
-        
-        # Verify line endings
-        echo "DEBUG: File type after conversion:"
-        file "$PACKAGE_DIR/win_installation.bat"
     else
         echo "ERROR: scripts/fastboot directory not found!"
         exit 1
