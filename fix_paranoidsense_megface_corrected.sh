@@ -1,94 +1,95 @@
 #!/usr/bin/env bash
 set -e
 
-# Detect ROM root (current directory if it contains packages/apps)
-if [ -d "packages/apps/ParanoidSense" ]; then
-  ROOT="$(pwd)"
-elif [ -d "PIXELOS16/packages/apps/ParanoidSense" ]; then
-  ROOT="$(pwd)/PIXELOS16"
-else
-  echo "ERROR: Run this script from your ROM root directory"
-  echo "Expected to find: packages/apps/ParanoidSense"
+if [ ! -d "packages/apps/ParanoidSense" ]; then
+  echo "ERROR: Run from ROM root (~/PIXELOS16)"
   exit 1
 fi
 
-FILE="$ROOT/packages/apps/ParanoidSense/Android.bp"
+FILE="packages/apps/ParanoidSense/Android.bp"
 
-echo "== ParanoidSense libmegface fix (CORRECTED) =="
-echo "ROM root: $ROOT"
+echo "=== ParanoidSense libmegface fix (IMPROVED) ==="
 
-if [ ! -f "$FILE" ]; then
-  echo "ERROR: $FILE not found."
-  exit 1
-fi
-
-# Backup once
+# Backup
 if [ ! -f "$FILE.bak" ]; then
   cp "$FILE" "$FILE.bak"
-  echo "Backup created: $FILE.bak"
-else
-  echo "Using existing backup: $FILE.bak"
+  echo "✓ Backup created"
 fi
 
-echo ""
-echo "1) KEEPING libmegface in required[] list (so it uses MTK's version)..."
-# Ensure libmegface dependency is UNCOMMENTED
+echo "1) Uncommenting libmegface in required[] list..."
+# Make sure the dependency is active
 sed -i -E 's/^([[:space:]]*)\/\/[[:space:]]*"libmegface",/\1"libmegface",/' "$FILE"
 
-echo "2) Commenting ONLY the libmegface module definition block..."
-# Comment the whole cc_* block that contains name: "libmegface"
-awk '
-  BEGIN { inblock=0 }
-  {
-    if ($0 ~ /^[[:space:]]*cc_.*\{/ && !inblock) {
-      # Potential start of a module; buffer until we know if it contains libmegface
-      inblock=1; buf[0]=$0; n=1; next
-    }
-    if (inblock) {
-      buf[n++]=$0
-      if ($0 ~ /^[[:space:]]*\}/) {
-        # End of block; check if it contains the target name
-        has=0
-        for (i=0;i<n;i++) {
-          if (buf[i] ~ /name:[[:space:]]*"libmegface"/) { has=1; break }
-        }
-        # Print commented or original
-        for (i=0;i<n;i++) {
-          if (has && buf[i] !~ /^[[:space:]]*\/\//) {
-            print "// " buf[i]
-          } else {
-            print buf[i]
-          }
-        }
-        inblock=0; n=0
-      }
-      next
-    }
-    print $0
-  }
-' "$FILE" > "$FILE.tmp" && mv "$FILE.tmp" "$FILE"
+echo "2) Commenting the entire libmegface module block..."
+# Use Python for reliable block commenting
+python3 << 'PYTHON_SCRIPT'
+import re
+
+with open("packages/apps/ParanoidSense/Android.bp", "r") as f:
+    lines = f.readlines()
+
+output = []
+in_libmegface_block = False
+block_depth = 0
+skip_block = False
+
+for line in lines:
+    # Check if this line starts a cc_ module
+    if re.match(r'^\s*cc_\w+\s*\{', line) and not in_libmegface_block:
+        in_libmegface_block = True
+        block_depth = 1
+        block_start = len(output)
+        block_lines = [line]
+        continue
+    
+    if in_libmegface_block:
+        block_lines.append(line)
+        
+        # Count braces
+        block_depth += line.count('{') - line.count('}')
+        
+        # Block ended
+        if block_depth == 0:
+            # Check if this block contains name: "libmegface"
+            block_text = ''.join(block_lines)
+            if re.search(r'name:\s*"libmegface"', block_text):
+                # Comment out entire block
+                for bline in block_lines:
+                    if not bline.strip().startswith('//'):
+                        output.append('// ' + bline)
+                    else:
+                        output.append(bline)
+                skip_block = True
+            else:
+                # Keep block as-is
+                output.extend(block_lines)
+            
+            in_libmegface_block = False
+            block_lines = []
+            continue
+    
+    if not in_libmegface_block:
+        output.append(line)
+
+with open("packages/apps/ParanoidSense/Android.bp", "w") as f:
+    f.writelines(output)
+
+print("✓ Module block commented")
+PYTHON_SCRIPT
 
 echo ""
-echo "3) Verifying..."
+echo "3) Verification:"
 echo ""
-echo "Checking module definition is commented:"
-if grep -A 5 'name:[[:space:]]*"libmegface"' "$FILE" 2>/dev/null | head -1 | grep '^[[:space:]]*\/\/' >/dev/null; then
-  echo "  ✓ libmegface module definition is commented"
-else
-  echo "  ✗ WARNING: libmegface module definition might not be commented"
-fi
+
+# Show the required section
+echo "Required dependencies:"
+grep -A 10 'required:' "$FILE" | grep -E '(required:|libmegface)' || true
 
 echo ""
-echo "Checking dependency is NOT commented:"
-if grep 'required:[[:space:]]*\[' -A 20 "$FILE" 2>/dev/null | grep '"libmegface"' | grep -v '^[[:space:]]*\/\/' >/dev/null; then
-  echo "  ✓ libmegface is in required dependencies (will use MTK's version)"
-else
-  echo "  ✗ WARNING: libmegface might be commented in required list"
-fi
+echo "Libmegface module definition:"
+grep -B 1 -A 3 'name: "libmegface"' "$FILE" | head -5 || true
 
 echo ""
-echo "✅ Done!"
-echo ""
-echo "Next steps:"
-echo "  rm -rf out/soong"
-echo "  mka bacon"
+echo "✅ Done! Now run:"
+echo "   rm -rf out/soong"
+echo "   mka bacon"
