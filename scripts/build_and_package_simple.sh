@@ -7,14 +7,12 @@ set -e
 DEVICE="xaga"
 BUILD_TYPE="user"
 FIRMWARE_REPO="https://github.com/XagaForge/android_vendor_firmware"
-FIRMWARE_BRANCH="main" # Assuming main branch, can be adjusted
-# List of firmware images required by win_installation.bat
+FIRMWARE_BRANCH="main"
 FIRMWARE_IMAGES=(
     "apusys.img" "audio_dsp.img" "ccu.img" "dpm.img" "gpueb.img" "gz.img" "lk.img"
     "mcf_ota.img" "mcupm.img" "md1img.img" "mvpu_algo.img" "pi_img.img" "scp.img"
     "spmfw.img" "sspm.img" "tee.img" "vcp.img" "dtbo.img" "preloader_raw.img"
 )
-# List of build artifacts to copy from $OUT
 BUILD_ARTIFACTS=(
     "boot.img" "vendor_boot.img" "super.img" "vbmeta.img" "vbmeta_system.img" "vbmeta_vendor.img"
 )
@@ -75,7 +73,6 @@ if [ "$DO_BUILD" = true ]; then
     m pixelos superimage
 else
     echo ">>> Skipping build (using existing artifacts)..."
-    # Verify that required artifacts exist
     echo ">>> Checking for existing build artifacts..."
     MISSING_ARTIFACTS=false
     for img in "${BUILD_ARTIFACTS[@]}"; do
@@ -107,23 +104,21 @@ if [ "$DO_FASTBOOT" = true ]; then
     # --- 3b. Copy Fastboot Tools and Scripts ---
     echo ">>> Copying fastboot scripts to $PACKAGE_DIR..."
     if [ -d "scripts/fastboot" ]; then
+        # Just copy everything as-is - files should already be in correct format
         cp -r scripts/fastboot/. "$PACKAGE_DIR/"
-        # Force CRLF for Windows batch file (remove existing CR first to avoid duplicates)
-        sed -i 's/\r$//;s/$/\r/' "$PACKAGE_DIR/win_installation.bat"
-        echo ">>> Converted win_installation.bat to CRLF"
+        echo ">>> Copied fastboot scripts and tools"
     else
         echo "ERROR: scripts/fastboot directory not found!"
         exit 1
     fi
 
-    # Verify tools directory
-    if [ -d "$PACKAGE_DIR/tools" ]; then
-        echo ">>> Tools directory verified in package."
-        ls -F "$PACKAGE_DIR/tools"
+    # Verify tools directory and executable
+    if [ -f "$PACKAGE_DIR/tools/windows/fastboot.exe" ]; then
+        echo ">>> Verified tools/windows/fastboot.exe exists."
     else
-        echo "ERROR: tools directory missing in package!"
-        echo "DEBUG: Listing source scripts/fastboot:"
-        ls -F "scripts/fastboot"
+        echo "ERROR: tools/windows/fastboot.exe missing from package!"
+        echo "DEBUG: Package contents:"
+        ls -R "$PACKAGE_DIR/tools" 2>/dev/null || echo "tools directory not found"
         exit 1
     fi
 
@@ -135,12 +130,10 @@ if [ "$DO_FASTBOOT" = true ]; then
 
     echo ">>> Copying firmware images to package..."
     for img in "${FIRMWARE_IMAGES[@]}"; do
-        # Search for the image file recursively within the temp firmware directory
         IMG_PATH=$(find "$TEMP_FIRMWARE_DIR" -type f -name "$img" | head -n 1)
         
         if [ -n "$IMG_PATH" ]; then
             echo ">>> Found $img at $IMG_PATH"
-            # Rename preloader_raw.img to preloader_xaga.bin if needed
             if [ "$img" == "preloader_raw.img" ]; then
                 cp "$IMG_PATH" "$IMAGES_DIR/preloader_xaga.bin"
             else
@@ -148,13 +141,9 @@ if [ "$DO_FASTBOOT" = true ]; then
             fi
         else
             echo "WARNING: Firmware image not found: $img"
-            # List files in temp firmware for debugging (limited to first 2 levels)
-            # echo "DEBUG: Listing temp firmware content:"
-            # find "$TEMP_FIRMWARE_DIR" -maxdepth 2
         fi
     done
 
-    # Clean up temp firmware dir
     rm -rf "$TEMP_FIRMWARE_DIR"
 
     # --- 3d. Copy Build Artifacts ---
@@ -182,11 +171,9 @@ fi
 # --- 4. Handle OTA ZIP (for Recovery builds) ---
 if [ "$DO_BUILD" = true ]; then
     echo ">>> Handling OTA ZIP..."
-    # Find the latest OTA zip
     OTA_ZIP=$(find "$OUT_DIR" -maxdepth 1 -name "Pixelos_${DEVICE}*.zip" ! -name "*FASTBOOT*" -type f | head -n 1)
     if [ -n "$OTA_ZIP" ]; then
         echo ">>> Found OTA ZIP: $OTA_ZIP"
-        # It's already in OUT_DIR, so we just acknowledge it.
     else
         echo "WARNING: OTA ZIP not found in $OUT_DIR"
     fi

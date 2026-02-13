@@ -1,5 +1,6 @@
-# Auto detect text files and perform LF normalization
-* text=auto
-
-# Force batch files to use CRLF line endings (Windows)
+# Preserve CRLF line endings for Windows batch files
 *.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Don't normalize line endings for these files
+scripts/fastboot/*.bat -text
