@@ -107,9 +107,6 @@ if [ "$DO_FASTBOOT" = true ]; then
     # --- 3b. Copy Fastboot Tools and Scripts ---
     echo ">>> Copying fastboot scripts to $PACKAGE_DIR..."
     if [ -d "scripts/fastboot" ]; then
-        echo "DEBUG: Checking source win_installation.bat"
-        ls -l scripts/fastboot/win_installation.bat
-        head -n 5 scripts/fastboot/win_installation.bat
         cp -r scripts/fastboot/. "$PACKAGE_DIR/"
     else
         echo "ERROR: scripts/fastboot directory not found!"
