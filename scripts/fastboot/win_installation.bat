@@ -1,20 +1,21 @@
 @echo off
-cls
 setlocal
+cd /d "%~dp0"
+cls
 
 REM Enable ANSI escape codes
 for /f "tokens=2 delims=: " %%i in ('chcp') do set "cp=%%i"
 chcp 65001 > nul
 
 if not exist "tools\windows\fastboot.exe" (
-   powershell -Command "Write-Host 'ERROR: Important files for flashing are missing.' -ForegroundColor Red"
-   echo.
-   powershell -Command "Write-Host 'Possible solutions:' -ForegroundColor Blue"
-   powershell -Command "Write-Host '1. Redownload the ROM package.' -ForegroundColor Blue"
-   powershell -Command "Write-Host '2. Make sure all files are extracted.' -ForegroundColor Blue"
-   pause
-   chcp %cp% > nul
-   exit
+    powershell -Command "Write-Host 'ERROR: Important files for flashing are missing.' -ForegroundColor Red"
+    echo.
+    powershell -Command "Write-Host 'Possible solutions:' -ForegroundColor Blue"
+    powershell -Command "Write-Host '1. Redownload the ROM package.' -ForegroundColor Blue"
+    powershell -Command "Write-Host '2. Make sure all files are extracted.' -ForegroundColor Blue"
+    pause
+    chcp %cp% > nul
+    exit /b 1
 )
 
 set /p formatData=Do you want to format data for a clean flash? (Y/N): 
@@ -36,7 +37,7 @@ setlocal enabledelayedexpansion
 set "missingImages="
 
 for %%i in (%requiredImages%) do (
-    if not exist images\%%i (
+    if not exist "images\%%i" (
         set "missingImages=!missingImages! %%i "
     )
 )
@@ -51,7 +52,7 @@ if not "!missingImages!"=="" (
         pause
         endlocal
         chcp %cp% > nul
-        exit
+        exit /b 1
     )
 )
 
@@ -77,10 +78,12 @@ tools\windows\fastboot.exe flash mcupm_a images\mcupm.img
 tools\windows\fastboot.exe flash md1img_a images\md1img.img
 tools\windows\fastboot.exe flash mvpu_algo_a images\mvpu_algo.img
 tools\windows\fastboot.exe flash pi_img_a images\pi_img.img
-if exist images\preloader_xaga.bin (
+
+if exist "images\preloader_xaga.bin" (
     tools\windows\fastboot.exe flash preloader1 images\preloader_xaga.bin
     tools\windows\fastboot.exe flash preloader2 images\preloader_xaga.bin
 )
+
 tools\windows\fastboot.exe flash scp_a images\scp.img
 tools\windows\fastboot.exe flash spmfw_a images\spmfw.img
 tools\windows\fastboot.exe flash sspm_a images\sspm.img
@@ -100,4 +103,4 @@ echo.
 powershell -Command "Write-Host 'Click enter to reboot.' -ForegroundColor Blue"
 pause
 tools\windows\fastboot.exe reboot
-exit
+exit /b 0
