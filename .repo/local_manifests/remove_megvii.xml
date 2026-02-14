@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<manifest>
-    <remove-project name="XagaForge/android_hardware_mediatek" path="hardware/xiaomi/megvii" />
-</manifest>
