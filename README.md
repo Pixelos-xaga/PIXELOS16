@@ -37,11 +37,16 @@ breakfast xaga user
 
 Start the compilation:
 
+```
+make installclean
+```
+
 ```bash
 m pixelos superimage
 ```
 
 ```
+rm -rf hardware/xiaomi/megvii
 cd frameworks/base && bash ../../apply_animation_fixes.sh && git add -A && git commit -m "Fix Settings UI jitter with AresOS animation patches"
 ```
 ## Build Notes
