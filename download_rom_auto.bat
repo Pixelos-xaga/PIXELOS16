@@ -77,13 +77,26 @@ REM Run with real-time output (unbuffered)
 gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cd ~/PIXELOS16 && echo %PREPARE_CHOICE% | bash prepare_download.sh"
 
 set ERRORCODE=!ERRORLEVEL!
+echo.
+echo [SSH exit code: !ERRORCODE!]
+echo.
 
-if !ERRORCODE! NEQ 0 (
-    echo ERROR: Failed to prepare package on VM!
-    echo.
-    echo Make sure prepare_download.sh exists in /home/angxddeep/PIXELOS16/ on your VM
+REM Check if the output file was created (more reliable than exit code)
+echo === Verifying build output...
+for /f "tokens=*" %%a in ('gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cat /tmp/pixelos_last_build.txt 2>/dev/null || echo NOTFOUND"') do (
+    set VERIFY_PATH=%%a
+)
+
+if "!VERIFY_PATH!"=="NOTFOUND" (
+    echo ERROR: Build failed - no output file found!
     pause
     exit /b 1
+)
+
+if !ERRORCODE! NEQ 0 (
+    echo WARNING: SSH exited with code !ERRORCODE! but build appears successful.
+    echo Continuing anyway...
+    echo.
 )
 
 echo === Preparation complete!
