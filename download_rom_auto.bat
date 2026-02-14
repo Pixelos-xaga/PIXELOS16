@@ -69,8 +69,13 @@ if exist "%TEMP%\prepare_output.txt" del "%TEMP%\prepare_output.txt"
 
 REM Run prepare script on VM remotely
 echo === Running preparation script on VM...
-gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cd ~/PIXELOS16 && echo %PREPARE_CHOICE% | bash prepare_download.sh" > "%TEMP%\prepare_output.txt" 2>&1
-type "%TEMP%\prepare_output.txt"
+echo.
+echo [This may take several minutes if ROM needs to build...]
+echo.
+
+REM Run with real-time output (unbuffered)
+gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cd ~/PIXELOS16 && echo %PREPARE_CHOICE% | bash prepare_download.sh"
+
 set ERRORCODE=!ERRORLEVEL!
 
 if !ERRORCODE! NEQ 0 (
@@ -84,17 +89,16 @@ if !ERRORCODE! NEQ 0 (
 echo === Preparation complete!
 echo.
 
-REM Extract the package path from output
-for /f "tokens=*" %%a in ('findstr /C:"Location:" "%TEMP%\prepare_output.txt"') do (
-    set LINE=%%a
-    for /f "tokens=2 delims= " %%b in ("!LINE!") do set REMOTE_FILE=%%b
+REM Get the package path from the VM
+echo === Getting package location from VM...
+for /f "tokens=*" %%a in ('gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cat /tmp/pixelos_last_build.txt"') do (
+    set REMOTE_FILE=%%a
 )
 
 if "!REMOTE_FILE!"=="" (
-    echo ERROR: Could not find package path!
+    echo ERROR: Could not find package path on VM!
     echo.
-    echo Preparation output:
-    type "%TEMP%\prepare_output.txt"
+    echo Make sure the build completed successfully.
     pause
     exit /b 1
 )

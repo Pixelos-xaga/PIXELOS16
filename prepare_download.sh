@@ -130,3 +130,6 @@ echo "gcloud compute scp pixelos:$FINAL_FILE . --project=agile-outlook-481719-c1
 echo ""
 echo "Or just run the download_rom_auto.bat script on Windows!"
 echo "============================================"
+
+# Save path for automation
+echo "$FINAL_FILE" > /tmp/pixelos_last_build.txt
