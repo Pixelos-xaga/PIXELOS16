@@ -35,7 +35,7 @@ echo -e "${YELLOW}Step 1: Adding AresOS remote...${NC}"
 git remote add aresos "$ARESOS_REMOTE" 2>/dev/null || echo "Remote 'aresos' already exists"
 
 echo -e "${YELLOW}Step 2: Fetching commits from AresOS...${NC}"
-git fetch aresos --depth=100 2>&1 | grep -E "(error|fatal)" && {
+git fetch aresos $COMMIT1 $COMMIT2 2>&1 | grep -E "(error|fatal)" && {
     echo -e "${RED}Error fetching from AresOS remote${NC}"
     exit 1
 }
