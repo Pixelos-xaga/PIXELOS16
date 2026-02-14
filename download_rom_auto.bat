@@ -8,6 +8,7 @@ REM ============================================
 
 set PROJECT=agile-outlook-481719-c1
 set VM_NAME=pixelos
+set VM_USER=angxddeep
 set DOWNLOAD_DIR=%USERPROFILE%\Downloads\PixelOS_ROM
 
 echo ============================================
@@ -27,14 +28,9 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b 1
 )
 
-REM Ask for zone
-echo Enter your GCP VM zone (e.g., us-central1-a, asia-southeast1-b):
-set /p ZONE="Zone: "
-if "%ZONE%"=="" (
-    echo ERROR: Zone cannot be empty!
-    pause
-    exit /b 1
-)
+REM Set default zone
+set ZONE=us-central1-c
+echo Zone set to: %ZONE%
 
 echo.
 echo What would you like to download?
@@ -57,7 +53,7 @@ if "%CHOICE%"=="1" (
 )
 
 echo ============================================
-echo >>> Selected: %DESC%
+echo === Selected: %DESC%
 echo ============================================
 echo.
 
@@ -69,22 +65,24 @@ echo Step 1: Preparing package on VM...
 echo ============================================
 echo.
 
-REM Run prepare script on VM remotely
-echo >>> Running preparation script on VM...
-gcloud compute ssh %VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cd ~/PIXELOS16 && echo %PREPARE_CHOICE% | bash prepare_download.sh" > "%TEMP%\prepare_output.txt" 2>&1
+REM Clear output file
+if exist "%TEMP%\prepare_output.txt" del "%TEMP%\prepare_output.txt"
 
-if %ERRORLEVEL% NEQ 0 (
+REM Run prepare script on VM remotely
+echo === Running preparation script on VM...
+gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="cd ~/PIXELOS16 && echo %PREPARE_CHOICE% | bash prepare_download.sh" > "%TEMP%\prepare_output.txt" 2>&1
+type "%TEMP%\prepare_output.txt"
+set ERRORCODE=!ERRORLEVEL!
+
+if !ERRORCODE! NEQ 0 (
     echo ERROR: Failed to prepare package on VM!
     echo.
-    echo Error details:
-    type "%TEMP%\prepare_output.txt"
-    echo.
-    echo Make sure prepare_download.sh exists in ~/PIXELOS16/ on your VM
+    echo Make sure prepare_download.sh exists in /home/angxddeep/PIXELOS16/ on your VM
     pause
     exit /b 1
 )
 
-echo >>> Preparation complete!
+echo === Preparation complete!
 echo.
 
 REM Extract the package path from output
@@ -102,7 +100,7 @@ if "!REMOTE_FILE!"=="" (
     exit /b 1
 )
 
-echo >>> Package location: !REMOTE_FILE!
+echo === Package location: !REMOTE_FILE!
 echo.
 
 echo ============================================
@@ -111,7 +109,7 @@ echo ============================================
 echo.
 
 REM Download the file
-gcloud compute scp %VM_NAME%:!REMOTE_FILE! "%DOWNLOAD_DIR%\" --project=%PROJECT% --zone=%ZONE%
+gcloud compute scp %VM_USER%@%VM_NAME%:!REMOTE_FILE! "%DOWNLOAD_DIR%\" --project=%PROJECT% --zone=%ZONE%
 
 if %ERRORLEVEL% NEQ 0 (
     echo.
@@ -121,7 +119,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo >>> Download complete!
+echo === Download complete!
 echo.
 
 REM Get filename from path
@@ -138,13 +136,13 @@ if exist "!LOCAL_ARCHIVE!" (
     tar -xzf "!ARCHIVE_NAME!"
     
     if %ERRORLEVEL% EQU 0 (
-        echo >>> Extraction complete!
+        echo === Extraction complete!
         echo.
         
         REM Delete local archive
-        echo >>> Cleaning up local archive...
+        echo === Cleaning up local archive...
         del "!ARCHIVE_NAME!"
-        echo >>> Local archive deleted.
+        echo === Local archive deleted.
         
     ) else (
         echo ERROR: Extraction failed!
@@ -164,11 +162,11 @@ echo ============================================
 echo.
 
 REM Delete the archive from VM
-echo >>> Deleting archive from VM...
-gcloud compute ssh %VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="rm -f !REMOTE_FILE!" 2>nul
+echo === Deleting archive from VM...
+gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="rm -f ~/prepare_download_output.tar.gz 2>/dev/null; echo 'Cleanup done'"
 
 if %ERRORLEVEL% EQU 0 (
-    echo >>> VM archive deleted.
+    echo === VM archive deleted.
 ) else (
     echo WARNING: Could not delete archive from VM (non-critical)
 )
@@ -177,14 +175,14 @@ REM Optionally delete the entire downloads folder on VM
 set /p CLEANUP="Delete entire downloads folder on VM? (y/N): "
 if /i "!CLEANUP!"=="y" (
     for %%F in ("!REMOTE_FILE!") do set DOWNLOADS_DIR=%%~dpF
-    echo >>> Deleting !DOWNLOADS_DIR! on VM...
-    gcloud compute ssh %VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="rm -rf !DOWNLOADS_DIR:~0,-1!" 2>nul
-    echo >>> VM downloads folder deleted.
+    echo === Deleting !DOWNLOADS_DIR! on VM...
+    gcloud compute ssh %VM_USER%@%VM_NAME% --project=%PROJECT% --zone=%ZONE% --command="rm -rf !DOWNLOADS_DIR:~0,-1!"
+    echo === VM downloads folder deleted.
 )
 
 echo.
 echo ============================================
-echo >>> SUCCESS!
+echo === SUCCESS!
 echo ============================================
 echo.
 echo Files saved to:
@@ -201,7 +199,7 @@ if exist "%DOWNLOAD_DIR%\recovery_*" (
 )
 
 echo.
-echo >>> Opening download folder...
+echo === Opening download folder...
 explorer "%DOWNLOAD_DIR%"
 
 echo.
