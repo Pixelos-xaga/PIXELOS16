@@ -38,7 +38,11 @@ breakfast xaga user
 Start the compilation:
 
 ```bash
-m pixelos
+m pixelos superimage
+```
+
+```
+cd frameworks/base && bash ../../apply_animation_fixes.sh && git add -A && git commit -m "Fix Settings UI jitter with AresOS animation patches"
 ```
 ## Build Notes
 
