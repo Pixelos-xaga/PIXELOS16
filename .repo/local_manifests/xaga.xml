@@ -29,10 +29,10 @@
 
 
   <!-- Kernel -->
-  <project name="XagaForge/android_kernel_xiaomi_mt6895"
+  <project name="xiaomi-mt6895-devs/android_kernel_xiaomi_mt6895"
            path="kernel/xiaomi/mt6895"
            remote="github"
-           revision="16" />
+           revision="lineage-23.2" />
 
   <!-- MediaTek / Hardware -->
   <project name="Pixelos-xaga/android_device_mediatek_sepolicy_vndr"
