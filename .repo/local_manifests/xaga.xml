@@ -42,7 +42,7 @@
   <project name="PixelOS-AOSP/android_hardware_xiaomi"
            path="hardware/xiaomi"
            remote="github"
-           revision="16" />
+           revision="sixteen-qpr2" />
 
  <project name="Pixelos-xaga/android_vendor_mediatek_ims"
          path="vendor/mediatek/ims"
