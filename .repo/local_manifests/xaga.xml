@@ -17,16 +17,10 @@
          remote="github"
          revision="16" />
 
-<project name="priiii08918/android_vendor_xiaomi_xaga"
+<project name="itsvixano-dev/android/xiaomi-mt6895-devs/proprietary_vendor_xiaomi_xaga"
          path="vendor/xiaomi/xaga"
          remote="xaga-gitlab"
-         revision="16" />
-
-<project name="XagaForge/android_vendor_firmware"
-         path="vendor/firmware_mnt"
-         remote="github"
-         revision="16" />
-
+         revision="lineage-23.1" />
 
   <!-- Kernel -->
   <project name="xiaomi-mt6895-devs/android_kernel_xiaomi_mt6895"
