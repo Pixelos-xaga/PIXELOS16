@@ -12,7 +12,7 @@
            revision="16" />
 
 <!-- Vendor -->
-<project name="XagaForge/android_vendor_xiaomi_mt6895-common"
+<project name="Pixelos-xaga/android_vendor_xiaomi_mt6895-common"
          path="vendor/xiaomi/mt6895-common"
          remote="github"
          revision="16" />
@@ -50,10 +50,10 @@
            remote="github"
            revision="16" />
 
- <project name="XagaForge/android_vendor_mediatek_ims"
+ <project name="Pixelos-xaga/android_vendor_mediatek_ims"
          path="vendor/mediatek/ims"
          remote="github"
-         revision="16" />
+         revision="qpr2" />
 
 
   <!-- MIUI Camera (gitlab) -->
