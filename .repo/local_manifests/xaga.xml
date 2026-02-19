@@ -20,10 +20,10 @@
          remote="github"
          revision="16" />
 
-<project name="itsvixano-dev/android/xiaomi-mt6895-devs/proprietary_vendor_xiaomi_xaga"
+<project name="Pixelos-xaga/proprietary_vendor_xiaomi_xaga"
          path="vendor/xiaomi/xaga"
-         remote="xaga-gitlab"
-         revision="lineage-23.1" />
+         remote="github"
+         revision="sixteen-qpr2" />
 
   <!-- Kernel -->
   <project name="xiaomi-mt6895-devs/android_kernel_xiaomi_mt6895"
@@ -58,6 +58,6 @@
   <project name="Pixelos-xaga/proprietary_vendor_xiaomi_miuicamera-xaga"
            path="vendor/xiaomi/miuicamera-xaga"
            remote="github"
-           revision="main" />
+           revision="sixteen-qpr2" />
 
 </manifest>
