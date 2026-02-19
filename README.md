@@ -43,11 +43,10 @@ make installclean
 
 ```bash
 m pixelos superimage
-bash build_xaga.sh --mode ota-extract --sign --generate-keys --keys-dir ~/android-keys
+bash build_xaga.sh --mode ota-extract --sign --generate-keys --keys-dir ~/android-keys --upload --j 20
 ```
 
 ```
-rm -rf hardware/xiaomi/megvii
 cd frameworks/base && bash ../../apply_animation_fixes.sh && git add -A && git commit -m "Fix Settings UI jitter with AresOS animation patches"
 ```
 ## Build Notes
