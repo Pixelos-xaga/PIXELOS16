@@ -50,13 +50,13 @@
          revision="android-16-qpr2" />
 
 
-  <!-- MIUI Camera (gitlab) -->
-  <remote name="xaga-gitlab"
-          fetch="https://gitlab.com" />
+  <!-- MIUI Camera (github) -->
+//  <remote name="xaga-gitlab"
+//          fetch="https://gitlab.com" />
 
-  <project name="priiii1808/proprietary_vendor_xiaomi_miuicamera-xaga"
+  <project name="Pixelos-xaga/proprietary_vendor_xiaomi_miuicamera-xaga"
            path="vendor/xiaomi/miuicamera-xaga"
-           remote="xaga-gitlab"
-           revision="16.1" />
+           remote="github"
+           revision="A16-qpr2" />
 
 </manifest>
