@@ -57,6 +57,6 @@
   <project name="Pixelos-xaga/proprietary_vendor_xiaomi_miuicamera-xaga"
            path="vendor/xiaomi/miuicamera-xaga"
            remote="github"
-           revision="A16-qpr2" />
+           revision="main" />
 
 </manifest>
