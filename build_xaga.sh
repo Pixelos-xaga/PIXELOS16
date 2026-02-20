@@ -256,6 +256,39 @@ upload_artifact() {
   echo "Public URL (if bucket/object is public): https://storage.googleapis.com/${GCS_BUCKET}/${remote_base}/$(basename "${artifact}")"
 }
 
+find_latest_target_files_zip() {
+  local search_dirs=(
+    "${TARGET_FILES_DIR}"
+    "${PRODUCT_OUT}/obj/PACKAGING/target_files_intermediates"
+    "out/dist"
+  )
+  local dir
+  local file
+  local candidates=()
+  local newest=""
+  local newest_mtime=0
+  local mtime=0
+
+  for dir in "${search_dirs[@]}"; do
+    [[ -d "${dir}" ]] || continue
+    while IFS= read -r file; do
+      candidates+=("${file}")
+    done < <(find "${dir}" -maxdepth 2 -type f -name "*target_files*.zip" 2>/dev/null)
+  done
+
+  for file in "${candidates[@]}"; do
+    mtime="$(stat -c %Y "${file}" 2>/dev/null || echo 0)"
+    if [[ "${mtime}" -gt "${newest_mtime}" ]]; then
+      newest_mtime="${mtime}"
+      newest="${file}"
+    fi
+  done
+
+  [[ -n "${newest}" ]] || return 1
+  echo "${newest}"
+  return 0
+}
+
 if [[ "${UPLOAD_ONLY}" != true ]]; then
   if [[ ! -f build/envsetup.sh ]]; then
     echo "build/envsetup.sh not found. Run this from your Android source root." >&2
@@ -278,9 +311,9 @@ if [[ "${UPLOAD_ONLY}" != true ]]; then
 
     mkdir -p "${PRODUCT_OUT}"
 
-    LATEST_TARGET_FILES="$(ls -1t "${TARGET_FILES_DIR}"/*-target_files-*.zip 2>/dev/null | head -n 1 || true)"
+    LATEST_TARGET_FILES="$(find_latest_target_files_zip || true)"
     if [[ -z "${LATEST_TARGET_FILES}" ]]; then
-      echo "Could not find target-files zip in ${TARGET_FILES_DIR}" >&2
+      echo "Could not find target-files zip. Searched: ${TARGET_FILES_DIR}, ${PRODUCT_OUT}/obj/PACKAGING/target_files_intermediates, out/dist" >&2
       exit 1
     fi
 
