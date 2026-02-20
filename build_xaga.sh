@@ -171,7 +171,7 @@ if [[ "${DO_SIGN}" == true && "${UPLOAD_ONLY}" != true ]]; then
 fi
 
 prepare_inline_signing_keys() {
-  local inline_keys_dir="vendor/aosp/signing/keys"
+  local inline_keys_dir="vendor/lineage-priv/keys"
   local key
   local optional_keys=(
     testkey
@@ -193,6 +193,25 @@ prepare_inline_signing_keys() {
       ln -sfn "${KEYS_DIR}/${key}.x509.pem" "${inline_keys_dir}/${key}.x509.pem"
     fi
   done
+
+  if [[ ! -f "${inline_keys_dir}/keys.mk" ]]; then
+    cat > "${inline_keys_dir}/keys.mk" <<'EOF'
+PRODUCT_DEFAULT_DEV_CERTIFICATE := vendor/lineage-priv/keys/releasekey
+EOF
+  fi
+
+  if [[ ! -f "${inline_keys_dir}/BUILD.bazel" ]]; then
+    cat > "${inline_keys_dir}/BUILD.bazel" <<'EOF'
+filegroup(
+    name = "android_certificate_directory",
+    srcs = glob([
+        "*.pk8",
+        "*.pem",
+    ]),
+    visibility = ["//visibility:public"],
+)
+EOF
+  fi
 
   echo "Inline signing enabled with keys from ${KEYS_DIR} -> ${inline_keys_dir}"
 }
