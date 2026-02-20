@@ -20,10 +20,10 @@
          remote="github"
          revision="sixteen-qpr2" />
 
-<project name="Pixelos-xaga/proprietary_vendor_xiaomi_xaga"
+<project name="priiii08918/android_vendor_xiaomi_xaga"
          path="vendor/xiaomi/xaga"
-         remote="github"
-         revision="sixteen-qpr2" />
+         remote="xaga-gitlab"
+         revision="16.2" />
 
 <project name="Pixelos-xaga/android_vendor_lineage-priv_keys"
          path="vendor/lineage-priv"
