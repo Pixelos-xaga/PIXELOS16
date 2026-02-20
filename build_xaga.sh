@@ -25,6 +25,14 @@ TARGET_FILES_DIR=""
 SIGNED_OTA=""
 DO_SIGN=false
 BUILD_SIGN_STATE="unsigned"
+FASTBOOT_REQUIRED_IMAGES=(
+  boot.img
+  vendor_boot.img
+  super.img
+  vbmeta.img
+  vbmeta_system.img
+  vbmeta_vendor.img
+)
 
 usage() {
   cat <<'EOF'
@@ -175,18 +183,10 @@ make_fastboot_package_from_current_images() {
   local package_dir="out/upload_packages"
   local package_name="PixelOS_${DEVICE}-$(date +%Y%m%d-%H%M)-FASTBOOT-${sign_state}.zip"
   local package_path="${package_dir}/${package_name}"
-  local required_imgs=(
-    boot.img
-    vendor_boot.img
-    super.img
-    vbmeta.img
-    vbmeta_system.img
-    vbmeta_vendor.img
-  )
   local img
 
   mkdir -p "${package_dir}"
-  for img in "${required_imgs[@]}"; do
+  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
     if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
       return 1
     fi
@@ -194,7 +194,7 @@ make_fastboot_package_from_current_images() {
 
   (
     cd "${PRODUCT_OUT}"
-    zip -q -j "${ROOT_DIR}/${package_path}" "${required_imgs[@]}"
+    zip -q -j "${ROOT_DIR}/${package_path}" "${FASTBOOT_REQUIRED_IMAGES[@]}"
   )
 
   echo "${package_path}"
@@ -207,12 +207,24 @@ detect_artifacts() {
   OTA_SIGN_STATE="unsigned"
   FASTBOOT_SIGN_STATE="${BUILD_SIGN_STATE}"
   local latest_ota=""
+  local candidate
 
   if [[ -f "out/signed/signed-ota.zip" ]]; then
     OTA_ARTIFACT="out/signed/signed-ota.zip"
     OTA_SIGN_STATE="signed"
   else
     latest_ota="$(ls -1t "${PRODUCT_OUT}"/PixelOS_"${DEVICE}"*.zip 2>/dev/null | grep -v 'FASTBOOT' | head -n 1 || true)"
+    if [[ -z "${latest_ota}" ]]; then
+      for candidate in \
+        "$(ls -1t out/dist/*"${DEVICE}"*target_files*.zip 2>/dev/null | head -n 1 || true)" \
+        "$(ls -1t out/dist/*"${DEVICE}"*ota*.zip 2>/dev/null | head -n 1 || true)" \
+        "$(ls -1t out/dist/PixelOS_"${DEVICE}"*.zip 2>/dev/null | grep -v 'FASTBOOT' | head -n 1 || true)"; do
+        if [[ -n "${candidate}" ]]; then
+          latest_ota="${candidate}"
+          break
+        fi
+      done
+    fi
     if [[ -n "${latest_ota}" ]]; then
       OTA_ARTIFACT="${latest_ota}"
       if [[ "${OTA_ARTIFACT}" == *signed* || "${OTA_ARTIFACT}" == *SIGNED* ]]; then
@@ -289,6 +301,39 @@ find_latest_target_files_zip() {
   return 0
 }
 
+ensure_fastboot_images_present() {
+  local missing=()
+  local img
+
+  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
+    if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
+      missing+=("${img}")
+    fi
+  done
+
+  if [[ ${#missing[@]} -eq 0 ]]; then
+    return 0
+  fi
+
+  echo "Missing fastboot images after extraction: ${missing[*]}"
+  echo "Building missing image targets for fastboot package"
+  m -j"${JOBS}" superimage bootimage vendorbootimage vbmetaimage vbmeta_systemimage vbmeta_vendorimage
+
+  missing=()
+  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
+    if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
+      missing+=("${img}")
+    fi
+  done
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "Still missing required fastboot images: ${missing[*]}" >&2
+    return 1
+  fi
+
+  return 0
+}
+
 if [[ "${UPLOAD_ONLY}" != true ]]; then
   if [[ ! -f build/envsetup.sh ]]; then
     echo "build/envsetup.sh not found. Run this from your Android source root." >&2
@@ -350,6 +395,8 @@ if [[ "${UPLOAD_ONLY}" != true ]]; then
     cp -af "${EXTRACT_DIR}"/*.img "${PRODUCT_OUT}/"
 
     [[ "${DO_SIGN}" == true ]] && BUILD_SIGN_STATE="signed"
+
+    ensure_fastboot_images_present
   fi
 fi
 
