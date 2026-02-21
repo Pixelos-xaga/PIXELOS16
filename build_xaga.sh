@@ -12,6 +12,8 @@ MODE="super"
 CPU_COUNT="$(nproc)"
 JOBS="$((CPU_COUNT * 2))"
 KEYS_DIR=""
+LINEAGE_KEYS_DIR="${ROOT_DIR}/vendor/lineage-priv/keys"
+LINEAGE_KEYS_DIR_LEGACY="${ROOT_DIR}/vendor/lineage-priv"
 SIGN=false
 GENERATE_KEYS=false
 UPLOAD=false
@@ -62,7 +64,7 @@ Examples:
   ./build_xaga.sh --mode ota-extract
   ./build_xaga.sh --mode ota-extract --sign
   ./build_xaga.sh --mode ota-extract --sign --generate-keys
-  ./build_xaga.sh --mode ota-extract --keys-dir ~/android-keys
+  ./build_xaga.sh --mode ota-extract --keys-dir vendor/lineage-priv/keys
   ./build_xaga.sh --mode ota-extract --sign --upload --bucket my-bucket
   ./build_xaga.sh --upload-only --bucket my-bucket --upload-scope both
 EOF
@@ -144,8 +146,19 @@ if [[ "${UPLOAD_ONLY}" == true ]]; then
   UPLOAD=true
 fi
 
-if [[ "${SIGN}" == true && -z "${KEYS_DIR}" ]]; then
-  KEYS_DIR="${HOME}/android-keys"
+if [[ -d "${LINEAGE_KEYS_DIR}" ]]; then
+  DEFAULT_LINEAGE_KEYS_DIR="${LINEAGE_KEYS_DIR}"
+else
+  DEFAULT_LINEAGE_KEYS_DIR="${LINEAGE_KEYS_DIR_LEGACY}"
+fi
+
+if [[ -n "${KEYS_DIR}" && "${KEYS_DIR}" != "${LINEAGE_KEYS_DIR}" && "${KEYS_DIR}" != "${LINEAGE_KEYS_DIR_LEGACY}" ]]; then
+  echo "Ignoring --keys-dir=${KEYS_DIR}; using in-tree lineage keys only." >&2
+  KEYS_DIR="${DEFAULT_LINEAGE_KEYS_DIR}"
+fi
+
+if [[ "${SIGN}" == true ]]; then
+  KEYS_DIR="${DEFAULT_LINEAGE_KEYS_DIR}"
 fi
 
 if [[ "${SIGN}" == true || -n "${KEYS_DIR}" ]]; then
@@ -175,6 +188,8 @@ fi
 
 prepare_inline_signing_keys() {
   local inline_keys_dir="vendor/lineage-priv/keys"
+  local inline_keys_dir_abs=""
+  local source_keys_dir_abs=""
   local key
   local optional_keys=(
     testkey
@@ -186,6 +201,13 @@ prepare_inline_signing_keys() {
   fi
 
   mkdir -p "${inline_keys_dir}"
+  inline_keys_dir_abs="$(readlink -f "${inline_keys_dir}" 2>/dev/null || true)"
+  source_keys_dir_abs="$(readlink -f "${KEYS_DIR}" 2>/dev/null || true)"
+  if [[ -n "${inline_keys_dir_abs}" && -n "${source_keys_dir_abs}" && "${inline_keys_dir_abs}" == "${source_keys_dir_abs}" ]]; then
+    echo "Inline signing enabled with in-tree lineage keys at ${inline_keys_dir}"
+    return 0
+  fi
+
   for key in "${REQUIRED_KEYS[@]}"; do
     ln -sfn "${KEYS_DIR}/${key}.pk8" "${inline_keys_dir}/${key}.pk8"
     ln -sfn "${KEYS_DIR}/${key}.x509.pem" "${inline_keys_dir}/${key}.x509.pem"
