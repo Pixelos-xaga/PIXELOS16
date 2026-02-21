@@ -351,7 +351,8 @@ upload_artifact() {
 }
 
 package_fastboot_zip() {
-  local zip_path="${PRODUCT_OUT}/fastboot.zip"
+  local zip_name="fastboot.zip"
+  local zip_path="${PRODUCT_OUT}/${zip_name}"
   local img
   local missing=()
 
@@ -372,10 +373,13 @@ package_fastboot_zip() {
   fi
 
   rm -f "${zip_path}"
-  (
+  if ! (
     cd "${PRODUCT_OUT}"
-    zip -q -9 "${zip_path}" "${FASTBOOT_REQUIRED_IMAGES[@]}"
-  )
+    zip -q -9 "${zip_name}" "${FASTBOOT_REQUIRED_IMAGES[@]}"
+  ); then
+    echo "Failed to create ${zip_path}" >&2
+    return 1
+  fi
   FASTBOOT_ARTIFACT="${zip_path}"
   echo "Created fastboot artifact: ${FASTBOOT_ARTIFACT}"
   return 0
