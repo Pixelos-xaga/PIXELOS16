@@ -359,70 +359,22 @@ find_latest_target_files_zip() {
   return 0
 }
 
-have_sha256_tool() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    return 0
-  fi
-  if command -v shasum >/dev/null 2>&1; then
-    return 0
-  fi
-  return 1
-}
-
-sha256_file() {
-  local file="$1"
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum "${file}" | awk '{print $1}'
-  else
-    shasum -a 256 "${file}" | awk '{print $1}'
-  fi
-}
-
-sha256_stdin() {
-  if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum | awk '{print $1}'
-  else
-    shasum -a 256 | awk '{print $1}'
-  fi
-}
-
-verify_superimage_hash_match() {
+extract_superimage_from_target_files() {
   local target_files_zip="$1"
-  local local_super="${PRODUCT_OUT}/super.img"
-  local local_hash
-  local zip_hash
+  local output_super="${PRODUCT_OUT}/super.img"
 
-  if [[ ! -f "${local_super}" ]]; then
-    echo "Hash check skipped: ${local_super} not found." >&2
-    return 1
-  fi
   if [[ -z "${target_files_zip}" || ! -f "${target_files_zip}" ]]; then
-    echo "Hash check skipped: target-files zip not found." >&2
+    echo "Cannot extract super.img: target-files zip not found." >&2
     return 1
   fi
   if ! unzip -l "${target_files_zip}" "IMAGES/super.img" >/dev/null 2>&1; then
-    echo "Hash check skipped: IMAGES/super.img not found in ${target_files_zip}." >&2
+    echo "Cannot extract super.img: IMAGES/super.img missing in ${target_files_zip}." >&2
     return 1
   fi
 
-  if ! have_sha256_tool; then
-    echo "Hash check skipped: neither sha256sum nor shasum is available." >&2
-    return 1
-  fi
-
-  local_hash="$(sha256_file "${local_super}")"
-  zip_hash="$(unzip -p "${target_files_zip}" "IMAGES/super.img" | sha256_stdin)"
-
-  echo "super.img SHA256 (product_out): ${local_hash}"
-  echo "super.img SHA256 (target_files): ${zip_hash}"
-
-  if [[ -n "${local_hash}" && "${local_hash}" == "${zip_hash}" ]]; then
-    echo "super.img hash check: MATCH"
-    return 0
-  fi
-
-  echo "super.img hash check: MISMATCH" >&2
-  return 1
+  echo "Extracting OTA super image from ${target_files_zip} -> ${output_super}"
+  unzip -p "${target_files_zip}" "IMAGES/super.img" > "${output_super}"
+  return 0
 }
 
 ensure_fastboot_images_present() {
@@ -515,12 +467,7 @@ if [[ "${UPLOAD_ONLY}" != true ]]; then
 
     ensure_fastboot_images_present
 
-    if [[ -z "${LATEST_TARGET_FILES}" ]]; then
-      echo "Could not find target-files zip for super.img hash verification." >&2
-      echo "Searched: ${TARGET_FILES_DIR}, ${PRODUCT_OUT}/obj/PACKAGING/target_files_intermediates, out/dist" >&2
-      exit 1
-    fi
-    verify_superimage_hash_match "${LATEST_TARGET_FILES}"
+    extract_superimage_from_target_files "${LATEST_TARGET_FILES}"
   fi
 fi
 
