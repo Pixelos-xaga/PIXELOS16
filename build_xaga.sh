@@ -364,11 +364,19 @@ extract_superimage_from_target_files() {
   local output_super="${PRODUCT_OUT}/super.img"
 
   if [[ -z "${target_files_zip}" || ! -f "${target_files_zip}" ]]; then
-    echo "Cannot extract super.img: target-files zip not found." >&2
+    if [[ -f "${output_super}" ]]; then
+      echo "Target-files zip not found; keeping existing ${output_super}."
+      return 0
+    fi
+    echo "Cannot extract super.img: target-files zip not found and ${output_super} is missing." >&2
     return 1
   fi
   if ! unzip -l "${target_files_zip}" "IMAGES/super.img" >/dev/null 2>&1; then
-    echo "Cannot extract super.img: IMAGES/super.img missing in ${target_files_zip}." >&2
+    if [[ -f "${output_super}" ]]; then
+      echo "IMAGES/super.img missing in ${target_files_zip}; keeping existing ${output_super}."
+      return 0
+    fi
+    echo "Cannot extract super.img: IMAGES/super.img missing in ${target_files_zip} and ${output_super} is missing." >&2
     return 1
   fi
 
