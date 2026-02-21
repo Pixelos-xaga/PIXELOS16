@@ -23,6 +23,7 @@ UPLOAD_SCOPE="both"
 PRODUCT_OUT=""
 TARGET_FILES_DIR=""
 SIGNED_OTA=""
+FASTBOOT_ARTIFACT=""
 DO_SIGN=false
 BUILD_SIGN_STATE="unsigned"
 BUILD_NUMBER=""
@@ -223,6 +224,7 @@ TARGET_FILES_DIR="out/target/product/${DEVICE}/obj/PACKAGING/target_files_interm
 
 detect_artifacts() {
   OTA_ARTIFACT=""
+  FASTBOOT_ARTIFACT=""
   OTA_SIGN_STATE="unsigned"
   FASTBOOT_SIGN_STATE="${BUILD_SIGN_STATE}"
   BUILD_NUMBER=""
@@ -231,6 +233,9 @@ detect_artifacts() {
   local newest=""
   local newest_mtime=0
   local mtime=0
+  local fastboot_candidates=()
+  local fastboot_newest=""
+  local fastboot_newest_mtime=0
 
   if [[ -f "out/signed/signed-ota.zip" ]]; then
     candidates+=("out/signed/signed-ota.zip")
@@ -255,6 +260,25 @@ detect_artifacts() {
     fi
   fi
 
+  if [[ -f "${PRODUCT_OUT}/fastboot.zip" ]]; then
+    fastboot_candidates+=("${PRODUCT_OUT}/fastboot.zip")
+  fi
+  while IFS= read -r file; do
+    fastboot_candidates+=("${file}")
+  done < <(find "${PRODUCT_OUT}" "out/dist" -maxdepth 2 -type f \( -name "*fastboot*.zip" -o -name "*FASTBOOT*.zip" \) ! -name "*target_files*" 2>/dev/null)
+
+  for file in "${fastboot_candidates[@]}"; do
+    [[ -f "${file}" ]] || continue
+    mtime="$(stat -c %Y "${file}" 2>/dev/null || echo 0)"
+    if [[ "${mtime}" -gt "${fastboot_newest_mtime}" ]]; then
+      fastboot_newest_mtime="${mtime}"
+      fastboot_newest="${file}"
+    fi
+  done
+  if [[ -n "${fastboot_newest}" ]]; then
+    FASTBOOT_ARTIFACT="${fastboot_newest}"
+  fi
+
   if [[ "${OTA_SIGN_STATE}" == "signed" ]]; then
     FASTBOOT_SIGN_STATE="signed"
   fi
@@ -265,6 +289,14 @@ detect_artifacts() {
     if [[ "${ota_base}" =~ ([0-9]{8}-[0-9]{4}) ]]; then
       BUILD_NUMBER="${BASH_REMATCH[1]}"
     elif [[ "${ota_base}" =~ ([0-9]{8}) ]]; then
+      BUILD_NUMBER="${BASH_REMATCH[1]}"
+    fi
+  elif [[ -n "${FASTBOOT_ARTIFACT}" ]]; then
+    local fastboot_base
+    fastboot_base="$(basename "${FASTBOOT_ARTIFACT}")"
+    if [[ "${fastboot_base}" =~ ([0-9]{8}-[0-9]{4}) ]]; then
+      BUILD_NUMBER="${BASH_REMATCH[1]}"
+    elif [[ "${fastboot_base}" =~ ([0-9]{8}) ]]; then
       BUILD_NUMBER="${BASH_REMATCH[1]}"
     fi
   fi
@@ -296,33 +328,34 @@ upload_artifact() {
   echo "Public URL (if bucket/object is public): https://storage.googleapis.com/${GCS_BUCKET}/${remote_base}/$(basename "${artifact}")"
 }
 
-upload_fastboot_images() {
-  local remote_base
-  local remote_path
+package_fastboot_zip() {
+  local zip_path="${PRODUCT_OUT}/fastboot.zip"
   local img
-  local uploaded_count=0
-
-  remote_base="${GCS_PREFIX}/${DEVICE}/${BUILD_NUMBER}/fastboot"
-  remote_base="${remote_base#/}"
-  remote_base="${remote_base%/}"
+  local missing=()
 
   for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
     if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
-      echo "Missing fastboot image: ${PRODUCT_OUT}/${img}" >&2
-      return 1
+      missing+=("${img}")
     fi
-    remote_path="gs://${GCS_BUCKET}/${remote_base}/${img}"
-    echo "Uploading fastboot image -> ${remote_path}"
-    gsutil cp "${PRODUCT_OUT}/${img}" "${remote_path}"
-    echo "Uploaded: ${remote_path}"
-    uploaded_count=$((uploaded_count + 1))
   done
-  if [[ "${uploaded_count}" -eq 0 ]]; then
-    echo "No fastboot images found in required list." >&2
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "Cannot package fastboot.zip; missing images: ${missing[*]}" >&2
     return 1
   fi
 
-  echo "Uploaded ${uploaded_count} fastboot images to gs://${GCS_BUCKET}/${remote_base}/"
+  if ! command -v zip >/dev/null 2>&1; then
+    echo "zip not found. Install zip package to create fastboot.zip." >&2
+    return 1
+  fi
+
+  rm -f "${zip_path}"
+  (
+    cd "${PRODUCT_OUT}"
+    zip -q -9 "${zip_path}" "${FASTBOOT_REQUIRED_IMAGES[@]}"
+  )
+  FASTBOOT_ARTIFACT="${zip_path}"
+  echo "Created fastboot artifact: ${FASTBOOT_ARTIFACT}"
   return 0
 }
 
@@ -498,10 +531,27 @@ if [[ "${UPLOAD}" == true ]]; then
   fi
 
   if [[ "${UPLOAD_SCOPE}" == "both" || "${UPLOAD_SCOPE}" == "fastboot" ]]; then
-    if upload_fastboot_images; then
+    CAN_PACKAGE_FASTBOOT=true
+    for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
+      if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
+        CAN_PACKAGE_FASTBOOT=false
+        break
+      fi
+    done
+
+    FASTBOOT_UPLOAD_ARTIFACT="${FASTBOOT_ARTIFACT:-}"
+    if [[ "${CAN_PACKAGE_FASTBOOT}" == true ]] && package_fastboot_zip; then
+      FASTBOOT_UPLOAD_ARTIFACT="${FASTBOOT_ARTIFACT}"
+    elif [[ -n "${FASTBOOT_UPLOAD_ARTIFACT}" && -f "${FASTBOOT_UPLOAD_ARTIFACT}" ]]; then
+      echo "Using existing fastboot artifact: ${FASTBOOT_UPLOAD_ARTIFACT}"
+    else
+      FASTBOOT_UPLOAD_ARTIFACT=""
+    fi
+
+    if [[ -n "${FASTBOOT_UPLOAD_ARTIFACT}" ]] && upload_artifact "${FASTBOOT_UPLOAD_ARTIFACT}" "fastboot"; then
       UPLOADED_ANY=true
     else
-      echo "No fastboot images detected; skipped fastboot upload."
+      echo "No fastboot zip detected; skipped fastboot upload."
     fi
   fi
 
