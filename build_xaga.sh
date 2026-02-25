@@ -396,10 +396,6 @@ normalize_ota_artifact_name() {
   local artifact_dir=""
   local artifact_name=""
   local artifact_build=""
-  local pretty_device=""
-  local renamed_name=""
-  local release_dir=""
-  local renamed_path=""
 
   if [[ -z "${artifact}" || ! -f "${artifact}" ]]; then
     return 1
@@ -418,23 +414,9 @@ normalize_ota_artifact_name() {
     artifact_build="$(date +%Y%m%d-%H%M)"
   fi
 
-  pretty_device="${DEVICE^}"
-  renamed_name="PIXELOS_${pretty_device}_${artifact_build}.zip"
-  release_dir="${ROOT_DIR}/out/release/${DEVICE}"
-  renamed_path="${release_dir}/${renamed_name}"
-
-  mkdir -p "${release_dir}"
-
-  if [[ "${artifact_name}" == "${renamed_name}" && "${artifact_dir}" == "${release_dir}" ]]; then
-    OTA_ARTIFACT="${artifact}"
-    BUILD_NUMBER="${artifact_build}"
-    return 0
-  fi
-
-  cp -f "${artifact}" "${renamed_path}"
-  OTA_ARTIFACT="${renamed_path}"
+  OTA_ARTIFACT="${artifact}"
   BUILD_NUMBER="${artifact_build}"
-  echo "Prepared OTA release artifact: ${artifact_name} -> ${renamed_name}"
+  echo "Prepared OTA release artifact: ${artifact_name}"
   return 0
 }
 
@@ -461,10 +443,8 @@ upload_artifact() {
 
   echo "Uploading ${artifact_kind} -> ${remote_path}"
   gsutil cp "${artifact}" "${remote_path}"
-  if [[ "${artifact_kind}" == "ota" ]]; then
-    gsutil setmeta -h "Content-Disposition:attachment; filename=${artifact_name}" "${remote_path}" >/dev/null 2>&1 || \
-      echo "Warning: failed to set Content-Disposition metadata for ${remote_path}"
-  fi
+  gsutil setmeta -h "Content-Disposition:attachment; filename=${artifact_name}" "${remote_path}" >/dev/null 2>&1 || \
+    echo "Warning: failed to set Content-Disposition metadata for ${remote_path}"
   echo "Uploaded: ${remote_path}"
   local public_url="https://storage.googleapis.com/${GCS_BUCKET}/${remote_base}/${artifact_name}"
   echo "Public URL (if bucket/object is public): ${public_url}"
@@ -585,6 +565,8 @@ upload_updater_json_to_ota_folder() {
   json_remote_path="gs://${GCS_BUCKET}/${OTA_REMOTE_BASE}/${json_name}"
   echo "Uploading updater JSON -> ${json_remote_path}"
   gsutil cp "${json_path}" "${json_remote_path}"
+  gsutil setmeta -h "Content-Disposition:attachment; filename=${json_name}" "${json_remote_path}" >/dev/null 2>&1 || \
+    echo "Warning: failed to set Content-Disposition metadata for ${json_remote_path}"
   echo "Uploaded updater JSON: ${json_remote_path}"
   echo "Updater JSON URL (if public): https://storage.googleapis.com/${GCS_BUCKET}/${OTA_REMOTE_BASE}/${json_name}"
 }
@@ -682,6 +664,8 @@ upload_ota_companion_images() {
     remote_path="gs://${GCS_BUCKET}/${OTA_REMOTE_BASE}/${img}"
     echo "Uploading OTA companion (${img}) -> ${remote_path}"
     gsutil cp "${staged_path}" "${remote_path}"
+    gsutil setmeta -h "Content-Disposition:attachment; filename=${img}" "${remote_path}" >/dev/null 2>&1 || \
+      echo "Warning: failed to set Content-Disposition metadata for ${remote_path}"
     echo "Uploaded OTA companion: ${remote_path}"
     echo "Companion URL (if public): https://storage.googleapis.com/${GCS_BUCKET}/${OTA_REMOTE_BASE}/${img}"
     uploaded_any=true
