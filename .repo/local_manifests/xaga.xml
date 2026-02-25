@@ -52,12 +52,6 @@
            remote="github"
            revision="sixteen-qpr2" />
 
-  <!-- Dolby Atmos -->
-  <project name="PixelOS-AOSP/android_packages_apps_DolbyAtmos"
-           path="packages/apps/DolbyAtmos"
-           remote="github"
-           revision="sixteen-qpr2" />
-
   <project name="Pixelos-xaga/android_vendor_mediatek_ims"
          path="vendor/mediatek/ims"
          remote="github"
