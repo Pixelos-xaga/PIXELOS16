@@ -47,7 +47,7 @@
            remote="github"
            revision="sixteen-qpr2" />
 
-  <project name="PixelOS-AOSP/android_hardware_xiaomi"
+  <project name="Pixelos-xaga/android_hardware_xiaomi"
            path="hardware/xiaomi"
            remote="github"
            revision="sixteen-qpr2" />
