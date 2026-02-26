@@ -44,7 +44,7 @@ make installclean
 ```bash
 source build/envsetup.sh
 export IS_OFFICIAL=true
-bash build_xaga.sh --mode ota-only --sign --keys-dir ~/android-keys --upload --jobs 40
+bash build_xaga.sh --mode ota-extract --sign --keys-dir ~/android-keys --upload --upload-scope both --jobs 40
 
 --variant userdebug
  
