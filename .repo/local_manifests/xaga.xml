@@ -11,13 +11,13 @@
 
   <project name="XagaForge/android_device_xiaomi_mt6895-common"
            path="device/xiaomi/mt6895-common"
-           remote="xaga-gitlab"
+           remote="github"
            revision="16.2" />
 
 <!-- Vendor -->
 <project name="XagaForce/android_vendor_xiaomi_mt6895-common"
          path="vendor/xiaomi/mt6895-common"
-         remote="xaga-gitlab"
+         remote="github"
          revision="16.2" />
 
 <project name="priiii08918/android_vendor_xiaomi_xaga"
@@ -33,18 +33,18 @@
   <!-- Kernel -->
   <project name="XagaForge/android_kernel_xiaomi_mt6895"
            path="kernel/xiaomi/mt6895"
-           remote="xaga-gitlab"
+           remote="github"
            revision="16.2" />
 
   <!-- MediaTek / Hardware -->
   <project name="XagaForge/android_device_mediatek_sepolicy_vndr"
            path="device/mediatek/sepolicy_vndr"
-           remote="xaga-gitlab"
+           remote="github"
            revision="16.2" />
 
   <project name="XagaForge/android_hardware_mediatek"
            path="hardware/mediatek"
-           remote="xaga-gitlab"
+           remote="github"
            revision="16.2" />
 
   <project name="PixelOS-AOSP/android_hardware_xiaomi"
