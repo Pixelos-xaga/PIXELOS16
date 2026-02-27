@@ -15,7 +15,7 @@
            revision="16.2" />
 
 <!-- Vendor -->
-<project name="Pixelos-xaga/android_vendor_xiaomi_mt6895-common"
+<project name="XagaForce/android_vendor_xiaomi_mt6895-common"
          path="vendor/xiaomi/mt6895-common"
          remote="github"
          revision="16.2" />
