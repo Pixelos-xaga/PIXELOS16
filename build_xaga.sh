@@ -47,6 +47,32 @@ FASTBOOT_REQUIRED_IMAGES=(
   vbmeta_system.img
   vbmeta_vendor.img
 )
+FASTBOOT_PACKAGE_IMAGES=(
+  apusys.img
+  audio_dsp.img
+  boot.img
+  ccu.img
+  dpm.img
+  dtbo.img
+  gpueb.img
+  gz.img
+  lk.img
+  mcf_ota.img
+  mcupm.img
+  md1img.img
+  mvpu_algo.img
+  pi_img.img
+  scp.img
+  spmfw.img
+  sspm.img
+  super.img
+  tee.img
+  vbmeta_system.img
+  vbmeta_vendor.img
+  vbmeta.img
+  vcp.img
+  vendor_boot.img
+)
 OTA_COMPANION_IMAGES=(
   boot.img
   vendor_boot.img
@@ -685,100 +711,90 @@ upload_ota_companion_images() {
   return 0
 }
 
-array_contains() {
-  local needle="$1"
-  local item
-  for item in "${@:2}"; do
-    if [[ "${item}" == "${needle}" ]]; then
-      return 0
-    fi
-  done
-  return 1
-}
-
-prepare_fastboot_images_for_upload() {
+prepare_fastboot_package_images() {
+  local target_files_zip="$1"
   local img
   local missing=()
-  local latest_target_files=""
   local extract_pattern=()
 
-  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
-    if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
-      missing+=("${img}")
-    fi
-  done
-
-  if [[ ${#missing[@]} -eq 0 ]]; then
-    return 0
-  fi
-
-  latest_target_files="$(find_latest_target_files_zip || true)"
-  if [[ -z "${latest_target_files}" ]]; then
-    echo "[fastboot] Could not find target-files zip for missing images: ${missing[*]}"
-    return 1
-  fi
-
-  echo "[fastboot] Extracting missing images from ${latest_target_files}: ${missing[*]}"
-  for img in "${missing[@]}"; do
-    extract_pattern+=("IMAGES/${img}")
-  done
-  unzip -oj "${latest_target_files}" "${extract_pattern[@]}" -d "${PRODUCT_OUT}" >/dev/null 2>&1 || true
-
-  missing=()
-  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
+  for img in "${FASTBOOT_PACKAGE_IMAGES[@]}"; do
     if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
       missing+=("${img}")
     fi
   done
 
   if [[ ${#missing[@]} -gt 0 ]]; then
-    echo "[fastboot] Missing required images after extraction: ${missing[*]}" >&2
+    if [[ -z "${target_files_zip}" ]]; then
+      target_files_zip="$(find_latest_target_files_zip || true)"
+    fi
+    if [[ -z "${target_files_zip}" ]]; then
+      echo "[fastboot] Could not find target-files zip for missing images: ${missing[*]}" >&2
+      return 1
+    fi
+
+    echo "[fastboot] Extracting missing package images from ${target_files_zip}: ${missing[*]}"
+    for img in "${missing[@]}"; do
+      extract_pattern+=("IMAGES/${img}")
+    done
+    unzip -oj "${target_files_zip}" "${extract_pattern[@]}" -d "${PRODUCT_OUT}" >/dev/null 2>&1 || true
+  fi
+
+  missing=()
+  for img in "${FASTBOOT_PACKAGE_IMAGES[@]}"; do
+    if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
+      missing+=("${img}")
+    fi
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "[fastboot] Missing required package images: ${missing[*]}" >&2
     return 1
   fi
   return 0
 }
 
-upload_fastboot_images() {
+create_fastboot_zip_artifact() {
+  local build_id=""
+  local release_dir=""
+  local stage_dir=""
+  local zip_name=""
+  local zip_path=""
   local img
-  local source_path=""
-  local remote_base=""
-  local remote_path=""
-  local uploaded_any=false
-  local missing=()
 
-  remote_base="${GCS_PREFIX}/${DEVICE}/${BUILD_NUMBER}/fastboot"
-  remote_base="${remote_base#/}"
-  remote_base="${remote_base%/}"
-
-  prepare_fastboot_images_for_upload || true
-
-  for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
-    if array_contains "${img}" "${UPLOADED_OTA_COMPANION_IMAGES[@]}"; then
-      echo "Skipping fastboot upload (${img}): already uploaded as OTA companion image."
-      continue
-    fi
-
-    if ! source_path="$(resolve_ota_companion_image_path "${img}")"; then
-      echo "Fastboot upload skipped (${img}): source image not found."
-      missing+=("${img}")
-      continue
-    fi
-
-    remote_path="gs://${GCS_BUCKET}/${remote_base}/${img}"
-    echo "Uploading fastboot image (${img}) -> ${remote_path}"
-    gsutil cp "${source_path}" "${remote_path}"
-    gsutil setmeta -h "Content-Disposition:attachment; filename=${img}" "${remote_path}" >/dev/null 2>&1 || \
-      echo "Warning: failed to set Content-Disposition metadata for ${remote_path}"
-    echo "Uploaded fastboot image: ${remote_path}"
-    echo "Fastboot image URL (if public): https://storage.googleapis.com/${GCS_BUCKET}/${remote_base}/${img}"
-    uploaded_any=true
-  done
-
-  if [[ ${#missing[@]} -gt 0 ]]; then
-    echo "Fastboot upload missing images: ${missing[*]}"
+  if ! command -v zip >/dev/null 2>&1; then
+    echo "zip command not found. Install zip to create fastboot package." >&2
+    return 1
   fi
 
-  [[ "${uploaded_any}" == true ]]
+  build_id="${BUILD_NUMBER:-$(date +%Y%m%d-%H%M)}"
+  BUILD_NUMBER="${build_id}"
+  release_dir="${ROOT_DIR}/out/release/${DEVICE}"
+  stage_dir="${release_dir}/fastboot-${build_id}"
+  zip_name="PIXELOS_${DEVICE}-${build_id}_FASTBOOT.zip"
+  zip_path="${release_dir}/${zip_name}"
+
+  prepare_fastboot_package_images "${LATEST_TARGET_FILES:-}" || return 1
+
+  rm -rf "${stage_dir}"
+  mkdir -p "${stage_dir}"
+  for img in "${FASTBOOT_PACKAGE_IMAGES[@]}"; do
+    cp -f "${PRODUCT_OUT}/${img}" "${stage_dir}/${img}"
+  done
+
+  rm -f "${zip_path}"
+  (
+    cd "${stage_dir}"
+    zip -q -r "${zip_path}" ./*
+  )
+  rm -rf "${stage_dir}"
+
+  if [[ ! -f "${zip_path}" ]]; then
+    echo "Failed to create fastboot zip: ${zip_path}" >&2
+    return 1
+  fi
+
+  FASTBOOT_ARTIFACT="${zip_path}"
+  echo "Prepared fastboot zip artifact: ${FASTBOOT_ARTIFACT}"
+  return 0
 }
 
 find_latest_target_files_zip() {
@@ -899,38 +915,12 @@ if [[ "${UPLOAD_ONLY}" != true ]]; then
     [[ "${DO_SIGN}" == true ]] && BUILD_SIGN_STATE="signed"
     LATEST_TARGET_FILES="$(find_latest_target_files_zip || true)"
 
-    missing_fastboot_images=()
-    for img in "${FASTBOOT_REQUIRED_IMAGES[@]}"; do
-      if [[ ! -f "${PRODUCT_OUT}/${img}" ]]; then
-        missing_fastboot_images+=("${img}")
-      fi
-    done
-
-    if [[ ${#missing_fastboot_images[@]} -gt 0 ]]; then
-      if [[ -z "${LATEST_TARGET_FILES}" ]]; then
-        echo "Could not find target-files zip for fallback extraction. Missing images: ${missing_fastboot_images[*]}" >&2
-        echo "Searched: ${TARGET_FILES_DIR}, ${PRODUCT_OUT}/obj/PACKAGING/target_files_intermediates, out/dist" >&2
-        exit 1
-      fi
-
-      EXTRACT_FROM_ZIP="${LATEST_TARGET_FILES}"
-      EXTRACT_DIR="${PRODUCT_OUT}/images_from_target_files"
-      rm -rf "${EXTRACT_DIR}"
-      mkdir -p "${EXTRACT_DIR}"
-
-      echo "Missing fastboot images from direct build (${missing_fastboot_images[*]})."
-      echo "Fallback: extracting IMAGES/*.img from ${EXTRACT_FROM_ZIP}"
-      unzip -oj "${EXTRACT_FROM_ZIP}" "IMAGES/*.img" -d "${EXTRACT_DIR}" >/dev/null
-
-      echo "Copying extracted images into ${PRODUCT_OUT}"
-      cp -af "${EXTRACT_DIR}"/*.img "${PRODUCT_OUT}/"
-    else
-      echo "Fastboot images already present in ${PRODUCT_OUT}; skipping target-files image extraction."
-    fi
-
     ensure_fastboot_images_present
 
     extract_superimage_from_target_files "${LATEST_TARGET_FILES}"
+    prepare_fastboot_package_images "${LATEST_TARGET_FILES}"
+    create_fastboot_zip_artifact
+    echo "[4/4] OTA + fastboot zip prepared. Check ${PRODUCT_OUT} and ${ROOT_DIR}/out/release/${DEVICE}"
   else
     echo "[3/4] Building OTA package targets only"
     m -j"${JOBS}" pixelos target-files-package otapackage otatools
@@ -972,10 +962,15 @@ if [[ "${UPLOAD}" == true ]]; then
   fi
 
   if [[ "${UPLOAD_SCOPE}" == "both" || "${UPLOAD_SCOPE}" == "fastboot" ]]; then
-    if upload_fastboot_images; then
-      UPLOADED_ANY=true
+    if [[ -z "${FASTBOOT_ARTIFACT:-}" || ! -f "${FASTBOOT_ARTIFACT}" ]]; then
+      create_fastboot_zip_artifact || true
+    fi
+    if [[ -n "${FASTBOOT_ARTIFACT:-}" && -f "${FASTBOOT_ARTIFACT}" ]]; then
+      if upload_artifact "${FASTBOOT_ARTIFACT}" "fastboot"; then
+        UPLOADED_ANY=true
+      fi
     else
-      echo "No fastboot images uploaded; skipped fastboot upload."
+      echo "No fastboot zip artifact detected; skipped fastboot upload."
     fi
   fi
 
