@@ -44,7 +44,7 @@ make installclean
 ```bash
 source build/envsetup.sh
 export IS_OFFICIAL=true
-bash build_xaga.sh --mode ota-extract --sign --keys-dir ~/android-keys --upload --upload-scope fastboot -j$(nproc)
+bash build_xaga.sh --mode ota-extract --sign --keys-dir ~/android-keys --upload --upload-scope fastboot 
 
 --variant userdebug
  
