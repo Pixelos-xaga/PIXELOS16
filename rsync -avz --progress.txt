@@ -1,3 +1,8 @@
 rsync -avz --progress \
   angxddeep@34.93.254.82:/home/angxddeep/PIXELOS16/out/target/product/xaga/{boot.img,vbmeta.img,dtbo.img,vendor_boot.img,PixelOS_xaga-16.2-20260228-1202.zip} \
-  .
+  /mnt/c/users/angxd/Downloads/Pixelos-xaga/
+
+
+aws s3 sync /mnt/c/users/angxd/Downloads/Pixelos-xaga \
+  s3://pixelos-xaga/ \
+  --endpoint-url https://940498e63714b2244e672cdf7507a45c.r2.cloudflarestorage.com
