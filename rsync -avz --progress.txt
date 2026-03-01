@@ -6,3 +6,7 @@ rsync -avz --progress \
 aws s3 sync /mnt/c/users/angxd/Downloads/Pixelos-xaga \
   s3://pixelos-xaga/ \
   --endpoint-url https://940498e63714b2244e672cdf7507a45c.r2.cloudflarestorage.com
+
+rsync -avP --progress \
+boot.img vendor_boot.img vbmeta.img dtbo.img PIXELOS_Xaga_20260225-1118.zip \
+angxddeep@frs.sourceforge.net:/home/frs/project/xagaproject/Pixelos-xaga/Feb-2026/
